@@ -1,38 +1,33 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowRight, Pencil, Trash2, ShoppingCart } from 'lucide-react'
+import { ArrowRight, Pencil, Trash2 } from 'lucide-react'
 import { useRecipes } from '../hooks/useRecipes'
-import type { Recipe, RecipeIngredient } from '../types/database'
+import type { Recipe } from '../types/database'
+
+function getInstagramEmbedUrl(url: string): string | null {
+  // Convert instagram.com/reel/XXX or /p/XXX to embed URL
+  const match = url.match(/instagram\.com\/(reel|p)\/([\w-]+)/)
+  if (match) {
+    return `https://www.instagram.com/${match[1]}/${match[2]}/embed`
+  }
+  return null
+}
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { recipes, getRecipeIngredients, deleteRecipe, cookRecipe } = useRecipes()
+  const { recipes, deleteRecipe } = useRecipes()
   const [recipe, setRecipe] = useState<Recipe | null>(null)
-  const [ingredients, setIngredients] = useState<RecipeIngredient[]>([])
-  const [cookResult, setCookResult] = useState<string[] | null>(null)
-  const [cooking, setCooking] = useState(false)
 
   useEffect(() => {
     const r = recipes.find(r => r.id === id)
-    if (r) {
-      setRecipe(r)
-      getRecipeIngredients(r.id).then(setIngredients)
-    }
-  }, [id, recipes, getRecipeIngredients])
+    if (r) setRecipe(r)
+  }, [id, recipes])
 
   const handleDelete = async () => {
     if (!recipe || !confirm('למחוק את המתכון?')) return
     await deleteRecipe(recipe.id)
     navigate('/recipes')
-  }
-
-  const handleCook = async () => {
-    if (!recipe) return
-    setCooking(true)
-    const added = await cookRecipe(recipe.id)
-    setCookResult(added)
-    setCooking(false)
   }
 
   if (!recipe) {
@@ -42,6 +37,8 @@ export function RecipeDetailPage() {
       </div>
     )
   }
+
+  const embedUrl = recipe.reel_url ? getInstagramEmbedUrl(recipe.reel_url) : null
 
   return (
     <div className="space-y-6">
@@ -67,51 +64,24 @@ export function RecipeDetailPage() {
         <img src={recipe.image_url} alt="" className="w-full h-56 object-cover rounded-xl" />
       )}
 
-      {/* Description */}
-      {recipe.description && (
-        <p className="text-surface-300">{recipe.description}</p>
-      )}
-
-      {/* Cook button */}
-      <button
-        onClick={handleCook}
-        disabled={cooking}
-        className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white py-3 rounded-xl font-medium transition-colors disabled:opacity-50"
-      >
-        <ShoppingCart size={18} />
-        {cooking ? 'מוסיף לרשימה...' : 'הכן מתכון — הוסף מצרכים לרשימה'}
-      </button>
-
-      {cookResult && (
-        <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-sm">
-          {cookResult.length === 0 ? (
-            <span className="text-surface-300">כל המצרכים כבר ברשימה!</span>
-          ) : (
-            <>
-              <span className="text-accent font-medium">נוספו {cookResult.length} פריטים:</span>
-              <span className="text-surface-300 mr-2">{cookResult.join(', ')}</span>
-            </>
-          )}
+      {/* Instagram Reel */}
+      {embedUrl && (
+        <div className="rounded-xl overflow-hidden border border-surface-700">
+          <iframe
+            src={embedUrl}
+            className="w-full"
+            style={{ minHeight: '500px' }}
+            frameBorder="0"
+            scrolling="no"
+            allowTransparency
+            allow="encrypted-media"
+          />
         </div>
       )}
 
-      {/* Ingredients */}
-      {ingredients.length > 0 && (
-        <section>
-          <h2 className="text-sm font-bold text-surface-300 mb-3">מצרכים</h2>
-          <div className="space-y-2">
-            {ingredients.map(ing => (
-              <div key={ing.id} className="bg-surface-800 border border-surface-700 rounded-lg p-3 flex items-center gap-3">
-                <span className="text-surface-100">
-                  {ing.grocery_item?.name_he || ing.custom_name || '—'}
-                </span>
-                {ing.quantity && (
-                  <span className="text-sm text-surface-400">{ing.quantity}</span>
-                )}
-              </div>
-            ))}
-          </div>
-        </section>
+      {/* Description */}
+      {recipe.description && (
+        <p className="text-surface-300">{recipe.description}</p>
       )}
 
       {/* Steps */}

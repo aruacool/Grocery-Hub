@@ -1,29 +1,19 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowRight, Plus, X, GripVertical } from 'lucide-react'
+import { ArrowRight, Plus, X } from 'lucide-react'
 import { useRecipes } from '../hooks/useRecipes'
-import { useGroceryItems } from '../hooks/useGroceryItems'
-import type { RecipeIngredient } from '../types/database'
-
-interface IngredientRow {
-  grocery_item_id: string | null
-  quantity: string
-  custom_name: string
-}
 
 export function RecipeFormPage() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { recipes, getRecipeIngredients, createRecipe, updateRecipe, uploadRecipeImage } = useRecipes()
-  const { items } = useGroceryItems()
+  const { recipes, createRecipe, updateRecipe, uploadRecipeImage } = useRecipes()
 
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [reelUrl, setReelUrl] = useState('')
   const [steps, setSteps] = useState<string[]>([''])
-  const [ingredients, setIngredients] = useState<IngredientRow[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [saving, setSaving] = useState(false)
-  const [itemSearch, setItemSearch] = useState('')
 
   const isEdit = !!id
   const [loaded, setLoaded] = useState(false)
@@ -34,17 +24,11 @@ export function RecipeFormPage() {
     if (recipe) {
       setName(recipe.name)
       setDescription(recipe.description || '')
+      setReelUrl(recipe.reel_url || '')
       setSteps(recipe.steps?.length ? recipe.steps : [''])
-      getRecipeIngredients(recipe.id).then((ings: RecipeIngredient[]) => {
-        setIngredients(ings.map(i => ({
-          grocery_item_id: i.grocery_item_id,
-          quantity: i.quantity || '',
-          custom_name: i.custom_name || '',
-        })))
-      })
       setLoaded(true)
     }
-  }, [id, recipes, getRecipeIngredients, loaded])
+  }, [id, recipes, loaded])
 
   const handleSave = async () => {
     if (!name.trim()) return
@@ -54,23 +38,16 @@ export function RecipeFormPage() {
       name: name.trim(),
       description: description.trim() || null,
       image_url: null,
+      reel_url: reelUrl.trim() || null,
       steps: steps.filter(s => s.trim()),
     }
 
-    const ingData = ingredients
-      .filter(i => i.grocery_item_id || i.custom_name.trim())
-      .map(i => ({
-        grocery_item_id: i.grocery_item_id,
-        quantity: i.quantity.trim() || null,
-        custom_name: i.custom_name.trim() || null,
-      }))
-
     if (isEdit && id) {
-      await updateRecipe(id, recipeData, ingData)
+      await updateRecipe(id, recipeData)
       if (imageFile) await uploadRecipeImage(imageFile, id)
       navigate(`/recipes/${id}`)
     } else {
-      const newRecipe = await createRecipe(recipeData, ingData)
+      const newRecipe = await createRecipe(recipeData, [])
       if (imageFile && newRecipe) await uploadRecipeImage(imageFile, newRecipe.id)
       navigate('/recipes')
     }
@@ -85,27 +62,6 @@ export function RecipeFormPage() {
     next[i] = val
     setSteps(next)
   }
-
-  const addIngredient = (itemId?: string) => {
-    setIngredients([...ingredients, {
-      grocery_item_id: itemId || null,
-      quantity: '',
-      custom_name: '',
-    }])
-    setItemSearch('')
-  }
-
-  const removeIngredient = (i: number) => setIngredients(ingredients.filter((_, idx) => idx !== i))
-  const updateIngredient = (i: number, field: keyof IngredientRow, val: string) => {
-    const next = [...ingredients]
-    next[i] = { ...next[i], [field]: field === 'grocery_item_id' ? val : val }
-    setIngredients(next)
-  }
-
-  const filteredItems = items.filter(item =>
-    item.name_he.includes(itemSearch) ||
-    (item.name_en && item.name_en.toLowerCase().includes(itemSearch.toLowerCase()))
-  ).slice(0, 8)
 
   return (
     <div className="space-y-6">
@@ -140,6 +96,18 @@ export function RecipeFormPage() {
           />
         </div>
 
+        {/* Instagram Reel URL */}
+        <div>
+          <label className="block text-sm text-surface-400 mb-1">קישור לריל באינסטגרם</label>
+          <input
+            value={reelUrl}
+            onChange={e => setReelUrl(e.target.value)}
+            placeholder="https://www.instagram.com/reel/..."
+            className="w-full bg-surface-800 border border-surface-700 rounded-xl px-4 py-2.5 text-surface-100 focus:outline-none focus:border-primary"
+            dir="ltr"
+          />
+        </div>
+
         {/* Image */}
         <div>
           <label className="block text-sm text-surface-400 mb-1">תמונה</label>
@@ -149,78 +117,6 @@ export function RecipeFormPage() {
             onChange={e => setImageFile(e.target.files?.[0] || null)}
             className="w-full text-sm text-surface-400 file:bg-surface-700 file:text-surface-200 file:border-0 file:rounded-lg file:px-3 file:py-1.5 file:mr-3 file:cursor-pointer"
           />
-        </div>
-
-        {/* Ingredients */}
-        <div>
-          <label className="block text-sm text-surface-400 mb-2">מצרכים</label>
-          <div className="space-y-2">
-            {ingredients.map((ing, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <GripVertical size={14} className="text-surface-600 flex-shrink-0" />
-                <select
-                  value={ing.grocery_item_id || ''}
-                  onChange={e => updateIngredient(i, 'grocery_item_id', e.target.value || '')}
-                  className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-sm text-surface-100"
-                >
-                  <option value="">מצרך מותאם אישית</option>
-                  {items.map(item => (
-                    <option key={item.id} value={item.id}>{item.name_he}</option>
-                  ))}
-                </select>
-                {!ing.grocery_item_id && (
-                  <input
-                    value={ing.custom_name}
-                    onChange={e => updateIngredient(i, 'custom_name', e.target.value)}
-                    placeholder="שם מצרך"
-                    className="flex-1 bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-sm text-surface-100"
-                    dir="rtl"
-                  />
-                )}
-                <input
-                  value={ing.quantity}
-                  onChange={e => updateIngredient(i, 'quantity', e.target.value)}
-                  placeholder="כמות"
-                  className="w-24 bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-sm text-surface-100"
-                  dir="rtl"
-                />
-                <button onClick={() => removeIngredient(i)} className="p-1 text-surface-500 hover:text-danger">
-                  <X size={16} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Quick search to add ingredient */}
-          <div className="mt-2 relative">
-            <input
-              value={itemSearch}
-              onChange={e => setItemSearch(e.target.value)}
-              placeholder="חפש מוצר להוספה..."
-              className="w-full bg-surface-700 border border-surface-600 rounded-lg px-3 py-2 text-sm text-surface-100"
-              dir="rtl"
-            />
-            {itemSearch && filteredItems.length > 0 && (
-              <div className="absolute top-full mt-1 inset-x-0 bg-surface-700 border border-surface-600 rounded-lg shadow-lg z-10 max-h-48 overflow-auto">
-                {filteredItems.map(item => (
-                  <button
-                    key={item.id}
-                    onClick={() => addIngredient(item.id)}
-                    className="w-full text-right px-3 py-2 text-sm text-surface-200 hover:bg-surface-600"
-                  >
-                    {item.name_he}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => addIngredient()}
-            className="mt-2 flex items-center gap-1 text-sm text-primary hover:text-primary-hover"
-          >
-            <Plus size={14} /> הוסף מצרך מותאם אישית
-          </button>
         </div>
 
         {/* Steps */}

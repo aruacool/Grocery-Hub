@@ -33,6 +33,7 @@ export interface Recipe {
   name: string
   description: string | null
   image_url: string | null
+  reel_url: string | null
   steps: string[]
   created_at: string
 }

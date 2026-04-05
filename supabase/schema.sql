@@ -36,6 +36,7 @@ create table if not exists recipes (
   name text not null,
   description text,
   image_url text,
+  reel_url text,
   steps text[] not null default '{}',
   created_at timestamptz not null default now()
 );
