@@ -9,7 +9,7 @@ export function LoginPage() {
         <div className="text-6xl mb-4">🛒</div>
         <h1 className="text-2xl font-bold mb-2">רשימת קניות</h1>
         <p className="text-surface-400 mb-8 text-sm">
-          רשימת קניות משותפת ומתכונים למשפחה
+          הרשימת קניות של נדב ועדי ♥
         </p>
         <button
           onClick={signInWithDiscord}
