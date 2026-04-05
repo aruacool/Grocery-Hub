@@ -7,7 +7,7 @@ export function LoginPage() {
     <div className="min-h-screen relative flex items-center justify-center px-4">
       {/* Background image */}
       <div
-        className="absolute inset-0 bg-cover bg-center"
+        className="absolute inset-0 bg-cover bg-[center_30%]"
         style={{ backgroundImage: 'url(/login-bg.jpg)' }}
       />
       {/* Dark overlay with blur */}
