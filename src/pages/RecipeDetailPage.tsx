@@ -2,15 +2,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowRight, Pencil, Trash2, ShoppingCart } from 'lucide-react'
 import { useRecipes } from '../hooks/useRecipes'
+import { InstagramEmbed } from '../components/InstagramEmbed'
 import type { Recipe, RecipeIngredient } from '../types/database'
-
-function getInstagramEmbedUrl(url: string): string | null {
-  const match = url.match(/instagram\.com\/(reel|p)\/([\w-]+)/)
-  if (match) {
-    return `https://www.instagram.com/${match[1]}/${match[2]}/embed`
-  }
-  return null
-}
 
 export function RecipeDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -51,8 +44,6 @@ export function RecipeDetailPage() {
     )
   }
 
-  const embedUrl = recipe.reel_url ? getInstagramEmbedUrl(recipe.reel_url) : null
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -78,19 +69,7 @@ export function RecipeDetailPage() {
       )}
 
       {/* Instagram Reel */}
-      {embedUrl && (
-        <div className="rounded-xl overflow-hidden border border-surface-700">
-          <iframe
-            src={embedUrl}
-            className="w-full"
-            style={{ minHeight: '500px' }}
-            frameBorder="0"
-            scrolling="no"
-            allowTransparency
-            allow="encrypted-media"
-          />
-        </div>
-      )}
+      {recipe.reel_url && <InstagramEmbed url={recipe.reel_url} />}
 
       {/* Description */}
       {recipe.description && (
