@@ -26,9 +26,10 @@ export function RecipeFormPage() {
   const [itemSearch, setItemSearch] = useState('')
 
   const isEdit = !!id
+  const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    if (!id) return
+    if (!id || loaded) return
     const recipe = recipes.find(r => r.id === id)
     if (recipe) {
       setName(recipe.name)
@@ -41,8 +42,9 @@ export function RecipeFormPage() {
           custom_name: i.custom_name || '',
         })))
       })
+      setLoaded(true)
     }
-  }, [id, recipes, getRecipeIngredients])
+  }, [id, recipes, getRecipeIngredients, loaded])
 
   const handleSave = async () => {
     if (!name.trim()) return
