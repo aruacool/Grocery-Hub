@@ -10,6 +10,17 @@ interface AuthContextType {
   signOut: () => Promise<void>
 }
 
+// Allowed Discord user IDs
+const ALLOWED_DISCORD_IDS = new Set([
+  '247114953524248576',
+  '282234209764900865',
+])
+
+function isAllowedUser(user: User): boolean {
+  const discordId = user.user_metadata?.provider_id || user.user_metadata?.sub
+  return ALLOWED_DISCORD_IDS.has(discordId)
+}
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -24,12 +35,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user && !isAllowedUser(session.user)) {
+        supabase.auth.signOut()
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+        return
+      }
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user && !isAllowedUser(session.user)) {
+        supabase.auth.signOut()
+        setSession(null)
+        setUser(null)
+        setLoading(false)
+        return
+      }
       setSession(session)
       setUser(session?.user ?? null)
       setLoading(false)
