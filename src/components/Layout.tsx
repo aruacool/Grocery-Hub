@@ -5,7 +5,7 @@ import { installPWA } from '../main'
 import { useState, type ReactNode } from 'react'
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, signOut } = useAuth()
+  const { user, signOut, isViewer } = useAuth()
   const [showInstall, setShowInstall] = useState(true)
 
   const navItems = [
@@ -34,6 +34,11 @@ export function Layout({ children }: { children: ReactNode }) {
               <span className="text-sm text-surface-300 hidden sm:inline">
                 {getDiscordUsername(user)}
               </span>
+              {isViewer && (
+                <span className="text-xs bg-surface-700 text-surface-400 px-2 py-0.5 rounded-full">
+                  צפייה בלבד
+                </span>
+              )}
             </>
           )}
           <button

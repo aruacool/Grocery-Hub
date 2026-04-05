@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom'
 import { Plus, ChefHat } from 'lucide-react'
 import { useRecipes } from '../hooks/useRecipes'
+import { useAuth } from '../lib/auth'
 
 export function RecipesPage() {
   const { recipes, loading } = useRecipes()
+  const { isViewer } = useAuth()
 
   if (loading) {
     return (
@@ -19,12 +21,14 @@ export function RecipesPage() {
         <h1 className="text-lg font-bold flex items-center gap-2">
           <ChefHat size={20} /> מתכונים
         </h1>
-        <Link
-          to="/recipes/new"
-          className="flex items-center gap-1.5 text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl transition-colors"
-        >
-          <Plus size={16} /> מתכון חדש
-        </Link>
+        {!isViewer && (
+          <Link
+            to="/recipes/new"
+            className="flex items-center gap-1.5 text-sm bg-primary hover:bg-primary-hover text-white px-4 py-2 rounded-xl transition-colors"
+          >
+            <Plus size={16} /> מתכון חדש
+          </Link>
+        )}
       </div>
 
       {recipes.length === 0 ? (

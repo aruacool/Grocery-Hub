@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowRight, Pencil, Trash2, ShoppingCart } from 'lucide-react'
 import { useRecipes } from '../hooks/useRecipes'
+import { useAuth } from '../lib/auth'
 import { InstagramEmbed } from '../components/InstagramEmbed'
 import type { Recipe, RecipeIngredient } from '../types/database'
 
@@ -12,6 +13,7 @@ export function RecipeDetailPage() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [shoppingItems, setShoppingItems] = useState<RecipeIngredient[]>([])
   const [cookResult, setCookResult] = useState<string[] | null>(null)
+  const { isViewer } = useAuth()
   const [cooking, setCooking] = useState(false)
 
   useEffect(() => {
@@ -52,15 +54,19 @@ export function RecipeDetailPage() {
           <ArrowRight size={20} />
         </button>
         <h1 className="text-lg font-bold flex-1">{recipe.name}</h1>
-        <Link
-          to={`/recipes/${recipe.id}/edit`}
-          className="p-2 text-surface-400 hover:text-surface-100"
-        >
-          <Pencil size={18} />
-        </Link>
-        <button onClick={handleDelete} className="p-2 text-danger hover:text-red-400">
-          <Trash2 size={18} />
-        </button>
+        {!isViewer && (
+          <>
+            <Link
+              to={`/recipes/${recipe.id}/edit`}
+              className="p-2 text-surface-400 hover:text-surface-100"
+            >
+              <Pencil size={18} />
+            </Link>
+            <button onClick={handleDelete} className="p-2 text-danger hover:text-red-400">
+              <Trash2 size={18} />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Image */}
@@ -101,14 +107,16 @@ export function RecipeDetailPage() {
               </span>
             ))}
           </div>
-          <button
-            onClick={handleCook}
-            disabled={cooking}
-            className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white py-3 rounded-xl font-medium transition-colors disabled:opacity-50"
-          >
-            <ShoppingCart size={18} />
-            {cooking ? 'מוסיף לרשימה...' : 'הוסף מוצרים לרשימת הקניות'}
-          </button>
+          {!isViewer && (
+            <button
+              onClick={handleCook}
+              disabled={cooking}
+              className="w-full flex items-center justify-center gap-2 bg-accent hover:bg-accent-hover text-white py-3 rounded-xl font-medium transition-colors disabled:opacity-50"
+            >
+              <ShoppingCart size={18} />
+              {cooking ? 'מוסיף לרשימה...' : 'הוסף מוצרים לרשימת הקניות'}
+            </button>
+          )}
 
           {cookResult && (
             <div className="bg-accent/10 border border-accent/20 rounded-xl p-4 text-sm mt-3">

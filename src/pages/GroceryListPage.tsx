@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react'
 import { Search, Plus, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
 import { useGroceryItems } from '../hooks/useGroceryItems'
 import { useDepletion } from '../hooks/useDepletion'
+import { useAuth } from '../lib/auth'
 import { ItemCard } from '../components/ItemCard'
 import { AddItemModal } from '../components/AddItemModal'
 import type { GroceryItem } from '../types/database'
@@ -12,6 +13,7 @@ export function GroceryListPage() {
     toggleNeeded, toggleFavorite, updateItem, addItem, deleteItem, uploadImage,
   } = useGroceryItems()
   const { suggestions, trackingItems, dismissSuggestion } = useDepletion(items)
+  const { isViewer } = useAuth()
   const [search, setSearch] = useState('')
   const [collapsedCats, setCollapsedCats] = useState<Set<string>>(new Set())
   const [showAddModal, setShowAddModal] = useState(false)
@@ -77,17 +79,17 @@ export function GroceryListPage() {
             dir="rtl"
           />
         </div>
-        <button
+        {!isViewer && <button
           onClick={() => setShowAddModal(true)}
           className="p-2.5 bg-primary hover:bg-primary-hover text-white rounded-xl transition-colors"
           title="הוסף פריט חדש"
         >
           <Plus size={20} />
-        </button>
+        </button>}
       </div>
 
       {/* Depletion Suggestions */}
-      {suggestions.length > 0 && (
+      {!isViewer && suggestions.length > 0 && (
         <section>
           <h2 className="text-sm font-bold text-surface-300 mb-3 flex items-center gap-2">
             <RefreshCw size={16} /> הצעות לחידוש מלאי

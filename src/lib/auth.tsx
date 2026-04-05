@@ -2,31 +2,65 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isMissingEnv } from './supabase'
 
+export type UserRole = 'admin' | 'viewer'
+
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
+  role: UserRole | null
+  isViewer: boolean
   signInWithDiscord: () => Promise<void>
   signOut: () => Promise<void>
 }
 
-// Allowed Discord user IDs
-const ALLOWED_DISCORD_IDS = new Set([
-  '247114953524248576',
-  '282234209764900865',
-])
-
-function isAllowedUser(user: User): boolean {
-  const discordId = user.user_metadata?.provider_id || user.user_metadata?.sub
-  return ALLOWED_DISCORD_IDS.has(discordId)
-}
-
 const AuthContext = createContext<AuthContextType | null>(null)
+
+async function checkUserRole(user: User): Promise<UserRole | null> {
+  const discordId = user.user_metadata?.provider_id || user.user_metadata?.sub
+  if (!discordId) return null
+
+  const { data } = await supabase
+    .from('allowed_users')
+    .select('role')
+    .eq('discord_id', discordId)
+    .single()
+
+  return data?.role || null
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
+  const [role, setRole] = useState<UserRole | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const handleSession = async (session: Session | null) => {
+    if (!session?.user) {
+      setSession(null)
+      setUser(null)
+      setRole(null)
+      setLoading(false)
+      return
+    }
+
+    const userRole = await checkUserRole(session.user)
+
+    if (!userRole) {
+      // Not in allowed_users table — kick them out
+      await supabase.auth.signOut()
+      setSession(null)
+      setUser(null)
+      setRole(null)
+      setLoading(false)
+      return
+    }
+
+    setSession(session)
+    setUser(session.user)
+    setRole(userRole)
+    setLoading(false)
+  }
 
   useEffect(() => {
     if (isMissingEnv) {
@@ -35,29 +69,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user && !isAllowedUser(session.user)) {
-        supabase.auth.signOut()
-        setSession(null)
-        setUser(null)
-        setLoading(false)
-        return
-      }
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      handleSession(session)
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user && !isAllowedUser(session.user)) {
-        supabase.auth.signOut()
-        setSession(null)
-        setUser(null)
-        setLoading(false)
-        return
-      }
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      handleSession(session)
     })
 
     return () => subscription.unsubscribe()
@@ -78,7 +94,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signInWithDiscord, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, role, isViewer: role === 'viewer', signInWithDiscord, signOut }}>
       {children}
     </AuthContext.Provider>
   )

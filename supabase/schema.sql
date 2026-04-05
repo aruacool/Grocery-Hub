@@ -1,3 +1,17 @@
+-- Allowed Users
+create table if not exists allowed_users (
+  id uuid primary key default gen_random_uuid(),
+  discord_id text not null unique,
+  discord_name text,
+  role text not null default 'viewer' check (role in ('admin', 'viewer')),
+  created_at timestamptz not null default now()
+);
+
+-- Allow any authenticated user to read allowed_users (needed for login check)
+alter table allowed_users enable row level security;
+create policy "Anyone can read allowed_users" on allowed_users
+  for select using (true);
+
 -- Categories
 create table if not exists categories (
   id uuid primary key default gen_random_uuid(),

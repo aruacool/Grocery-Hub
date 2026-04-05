@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Star, Check, Pencil } from 'lucide-react'
 import type { GroceryItem } from '../types/database'
 import { EditItemModal } from './EditItemModal'
+import { useAuth } from '../lib/auth'
 
 interface ItemCardProps {
   item: GroceryItem
@@ -26,6 +27,7 @@ export function ItemCard({
   isTracking,
   showGotIt,
 }: ItemCardProps) {
+  const { isViewer } = useAuth()
   const [editing, setEditing] = useState(false)
   const [animating, setAnimating] = useState(false)
 
@@ -68,41 +70,46 @@ export function ItemCard({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            onClick={() => onToggleFavorite(item)}
-            className={`p-1.5 rounded-lg transition-colors ${
-              item.is_favorite
-                ? 'text-warning bg-warning/10'
-                : 'text-surface-500 hover:text-warning'
-            }`}
-            title="מועדף"
-          >
-            <Star size={16} fill={item.is_favorite ? 'currentColor' : 'none'} />
-          </button>
+        {!isViewer && (
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={() => onToggleFavorite(item)}
+              className={`p-1.5 rounded-lg transition-colors ${
+                item.is_favorite
+                  ? 'text-warning bg-warning/10'
+                  : 'text-surface-500 hover:text-warning'
+              }`}
+              title="מועדף"
+            >
+              <Star size={16} fill={item.is_favorite ? 'currentColor' : 'none'} />
+            </button>
 
-          <button
-            onClick={handleToggle}
-            className={`p-1.5 rounded-lg transition-colors ${
-              showGotIt
-                ? 'text-accent bg-accent/10 hover:bg-accent/20'
-                : item.is_needed
-                  ? 'text-primary bg-primary/10'
-                  : 'text-surface-500 hover:text-primary hover:bg-primary/10'
-            }`}
-            title={showGotIt ? 'קניתי!' : item.is_needed ? 'ברשימה' : 'הוסף לרשימה'}
-          >
-            <Check size={16} />
-          </button>
+            <button
+              onClick={handleToggle}
+              className={`p-1.5 rounded-lg transition-colors ${
+                showGotIt
+                  ? 'text-accent bg-accent/10 hover:bg-accent/20'
+                  : item.is_needed
+                    ? 'text-primary bg-primary/10'
+                    : 'text-surface-500 hover:text-primary hover:bg-primary/10'
+              }`}
+              title={showGotIt ? 'קניתי!' : item.is_needed ? 'ברשימה' : 'הוסף לרשימה'}
+            >
+              <Check size={16} />
+            </button>
 
-          <button
-            onClick={() => setEditing(true)}
-            className="p-1.5 rounded-lg text-surface-500 hover:text-surface-200 transition-colors"
-            title="ערוך"
-          >
-            <Pencil size={14} />
-          </button>
-        </div>
+            <button
+              onClick={() => setEditing(true)}
+              className="p-1.5 rounded-lg text-surface-500 hover:text-surface-200 transition-colors"
+              title="ערוך"
+            >
+              <Pencil size={14} />
+            </button>
+          </div>
+        )}
+        {isViewer && item.is_needed && (
+          <span className="text-primary text-xs">ברשימה</span>
+        )}
       </div>
 
       {editing && (
