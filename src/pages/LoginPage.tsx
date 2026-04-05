@@ -4,17 +4,16 @@ export function LoginPage() {
   const { signInWithDiscord } = useAuth()
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center px-4">
-      {/* Background image */}
-      <div
-        className="absolute inset-0 bg-cover bg-[center_30%]"
-        style={{ backgroundImage: 'url(/login-bg.jpg)' }}
-      />
-      {/* Dark overlay with blur */}
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+    <div className="min-h-screen relative flex items-center justify-center px-4 bg-surface-900 overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0">
+        <div className="absolute -top-1/2 -right-1/2 w-[800px] h-[800px] rounded-full bg-primary/10 blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -left-1/2 w-[600px] h-[600px] rounded-full bg-accent/10 blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] rounded-full bg-[#5865F2]/10 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+      </div>
 
       {/* Login card */}
-      <div className="relative z-10 bg-surface-800/80 backdrop-blur-xl rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-surface-600/50">
+      <div className="relative z-10 bg-surface-800/70 backdrop-blur-xl rounded-2xl p-8 max-w-sm w-full text-center shadow-2xl border border-surface-600/30">
         <div className="text-6xl mb-4">🛒</div>
         <h1 className="text-2xl font-bold mb-2">רשימת קניות</h1>
         <p className="text-surface-300 mb-8 text-sm">
