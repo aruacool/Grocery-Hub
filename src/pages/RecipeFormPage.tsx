@@ -44,13 +44,17 @@ export function RecipeFormPage() {
     if (!name.trim()) return
     setSaving(true)
 
-    const recipeData = {
+    const recipeData: Record<string, unknown> = {
       name: name.trim(),
       description: description.trim() || null,
-      image_url: null,
       reel_url: reelUrl.trim() || null,
       cooking_ingredients: cookingIngredients.filter(s => s.trim()),
       steps: steps.filter(s => s.trim()),
+    }
+
+    // Only set image_url to null on new recipes (edit preserves existing image)
+    if (!isEdit) {
+      recipeData.image_url = null
     }
 
     const ingData = shoppingItems

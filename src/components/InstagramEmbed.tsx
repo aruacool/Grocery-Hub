@@ -7,9 +7,11 @@ declare global {
 }
 
 function getInstagramPermalink(url: string): string | null {
-  const match = url.match(/instagram\.com\/(reel|p)\/([\w-]+)/)
+  const match = url.match(/instagram\.com\/(reels?|p)\/([\w-]+)/)
   if (match) {
-    return `https://www.instagram.com/${match[1]}/${match[2]}/`
+    // Normalize "reels" to "reel" for the permalink
+    const type = match[1] === 'reels' ? 'reel' : match[1]
+    return `https://www.instagram.com/${type}/${match[2]}/`
   }
   return null
 }
