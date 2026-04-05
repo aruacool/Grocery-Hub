@@ -23,26 +23,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    // Handle PKCE code exchange from OAuth callback
-    const params = new URLSearchParams(window.location.search)
-    const code = params.get('code')
-    if (code) {
-      supabase.auth.exchangeCodeForSession(code).then(({ data: { session } }) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-        // Clean up URL
-        window.history.replaceState({}, '', window.location.pathname)
-      }).catch(() => {
-        setLoading(false)
-      })
-    } else {
-      supabase.auth.getSession().then(({ data: { session } }) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
-      })
-    }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+    })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
