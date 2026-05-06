@@ -1,0 +1,122 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Convert OAuth logo to PNG</title>
+  <style>
+    body {
+      background: #1a1a2e;
+      color: #f0f0f0;
+      font-family: system-ui, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+      padding: 40px;
+      margin: 0;
+    }
+    .preview {
+      background: #fff;
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    }
+    canvas { display: block; width: 256px; height: 256px; }
+    button {
+      background: #7c3aed;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #9333ea; }
+    .row { display: flex; gap: 12px; align-items: center; }
+    select {
+      background: #2a2a3e;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 8px 12px;
+      border-radius: 6px;
+    }
+    p { max-width: 480px; text-align: center; line-height: 1.5; opacity: 0.85; }
+  </style>
+</head>
+<body>
+  <h1>OAuth logo → PNG</h1>
+  <p>Pick a size and click download. The SVG is inlined so this works opened directly from disk.</p>
+  <div class="preview"><canvas id="c" width="512" height="512"></canvas></div>
+  <div class="row">
+    <label>Size:
+      <select id="size">
+        <option value="120">120×120 (Google min)</option>
+        <option value="256">256×256</option>
+        <option value="512" selected>512×512</option>
+      </select>
+    </label>
+    <button id="dl">Download PNG</button>
+  </div>
+
+  <script id="svg-source" type="image/svg+xml"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+    <linearGradient id="cart" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#fff"/>
+      <stop offset="100%" stop-color="#f0e7ff"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="112" ry="112" fill="url(#bg)"/>
+  <circle cx="380" cy="120" r="80" fill="#fff" opacity="0.10"/>
+  <circle cx="100" cy="420" r="100" fill="#fff" opacity="0.08"/>
+  <ellipse cx="260" cy="408" rx="120" ry="14" fill="#000" opacity="0.25" filter="url(#shadow)"/>
+  <g stroke="url(#cart)" stroke-width="22" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M 100 150 L 160 150 L 200 320 L 380 320"/>
+    <path d="M 178 200 L 410 200 L 380 320" fill="url(#cart)" fill-opacity="0.95"/>
+  </g>
+  <circle cx="220" cy="380" r="22" fill="url(#cart)"/>
+  <circle cx="220" cy="380" r="8" fill="#7c3aed"/>
+  <circle cx="360" cy="380" r="22" fill="url(#cart)"/>
+  <circle cx="360" cy="380" r="8" fill="#7c3aed"/>
+  <path d="M 294 232 C 280 218, 250 218, 250 248 C 250 270, 280 290, 294 304 C 308 290, 338 270, 338 248 C 338 218, 308 218, 294 232 Z" fill="#ff6b9d"/>
+  <g fill="#fff" opacity="0.9">
+    <path d="M 420 100 L 425 115 L 440 120 L 425 125 L 420 140 L 415 125 L 400 120 L 415 115 Z"/>
+  </g>
+</svg></script>
+
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+    const svgSource = document.getElementById('svg-source').textContent;
+
+    async function render(size) {
+      const blob = new Blob([svgSource], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      canvas.width = size;
+      canvas.height = size;
+      ctx.clearRect(0, 0, size, size);
+      ctx.drawImage(img, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById('size').addEventListener('change', e => render(parseInt(e.target.value)));
+    document.getElementById('dl').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = `grocery-hub-oauth-${canvas.width}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    render(512);
+  </script>
+</body>
+</html>

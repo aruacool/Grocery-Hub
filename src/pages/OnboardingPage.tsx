@@ -1,17 +1,45 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LogOut, Plus, Ticket } from 'lucide-react'
+import { LogOut, Plus, Ticket, Lock } from 'lucide-react'
 import { useAuth, getDiscordUsername } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 
 export function OnboardingPage() {
-  const { user, signOut, refreshMembership } = useAuth()
+  const { user, signOut, refreshMembership, isAllowed } = useAuth()
   const navigate = useNavigate()
   const [mode, setMode] = useState<'choose' | 'create' | 'join'>('choose')
   const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
+
+  if (!isAllowed) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface-900 px-4">
+        <div className="bg-surface-800 rounded-2xl p-8 max-w-md w-full text-center border border-surface-700 shadow-2xl">
+          <div className="text-5xl mb-4"><Lock size={48} className="mx-auto text-surface-400" /></div>
+          <h1 className="text-xl font-bold mb-2">אין גישה</h1>
+          <p className="text-surface-300 text-sm mb-1">
+            {user ? `שלום ${getDiscordUsername(user)}` : ''}
+          </p>
+          <p className="text-surface-400 text-sm mb-2">
+            הכתובת <span dir="ltr" className="font-mono text-surface-200">{user?.email}</span>
+          </p>
+          <p className="text-surface-400 text-sm mb-6">
+            לא נמצאת ברשימת המורשים.
+            <br />
+            פנה לבעל האפליקציה כדי שיוסיף אותך.
+          </p>
+          <button
+            onClick={signOut}
+            className="w-full flex items-center justify-center gap-2 bg-surface-700 hover:bg-surface-600 text-surface-100 font-medium py-2.5 px-4 rounded-xl transition-colors"
+          >
+            <LogOut size={16} /> התנתק
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const handleCreate = async () => {
     setError('')

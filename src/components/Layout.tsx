@@ -1,11 +1,11 @@
 import { NavLink, Link } from 'react-router-dom'
-import { ShoppingCart, ListChecks, ChefHat, LogOut, Download, Settings } from 'lucide-react'
+import { ShoppingCart, ListChecks, ChefHat, LogOut, Download, Settings, ShieldCheck } from 'lucide-react'
 import { useAuth, getDiscordUsername, getDiscordAvatar } from '../lib/auth'
 import { installPWA } from '../main'
 import { useState, type ReactNode } from 'react'
 
 export function Layout({ children }: { children: ReactNode }) {
-  const { user, signOut, isViewer } = useAuth()
+  const { user, signOut, isViewer, isSuperAdmin } = useAuth()
   const [showInstall, setShowInstall] = useState(true)
 
   const navItems = [
@@ -40,6 +40,15 @@ export function Layout({ children }: { children: ReactNode }) {
                 </span>
               )}
             </>
+          )}
+          {isSuperAdmin && (
+            <Link
+              to="/admin"
+              className="p-2 text-surface-400 hover:text-primary transition-colors"
+              title="ניהול"
+            >
+              <ShieldCheck size={18} />
+            </Link>
           )}
           <Link
             to="/settings"

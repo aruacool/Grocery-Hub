@@ -18,6 +18,7 @@ interface AuthContextType {
   membership: Membership | null
   isMember: boolean
   isSuperAdmin: boolean
+  isAllowed: boolean
   isViewer: boolean
   signInWithDiscord: () => Promise<void>
   signInWithGoogle: () => Promise<void>
@@ -47,11 +48,18 @@ async function loadIsSuperAdmin(userId: string): Promise<boolean> {
   return !!data
 }
 
+async function loadIsAllowed(email: string | undefined): Promise<boolean> {
+  if (!email) return false
+  const { data } = await supabase.rpc('is_email_allowed', { p_email: email })
+  return !!data
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
   const [membership, setMembership] = useState<Membership | null>(null)
   const [isSuperAdmin, setIsSuperAdmin] = useState(false)
+  const [isAllowed, setIsAllowed] = useState(false)
   const [loading, setLoading] = useState(true)
 
   const handleSession = async (newSession: Session | null) => {
@@ -60,6 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null)
       setMembership(null)
       setIsSuperAdmin(false)
+      setIsAllowed(false)
       setLoading(false)
       return
     }
@@ -67,12 +76,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(newSession)
     setUser(newSession.user)
 
-    const [m, s] = await Promise.all([
+    const [m, s, a] = await Promise.all([
       loadMembership(newSession.user.id),
       loadIsSuperAdmin(newSession.user.id),
+      loadIsAllowed(newSession.user.email),
     ])
     setMembership(m)
     setIsSuperAdmin(s)
+    setIsAllowed(a)
     setLoading(false)
   }
 
@@ -125,6 +136,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         membership,
         isMember: !!membership,
         isSuperAdmin,
+        isAllowed,
         isViewer: membership?.role === 'viewer',
         signInWithDiscord,
         signInWithGoogle,
