@@ -4,11 +4,13 @@ import { isMissingEnv } from './lib/supabase'
 import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
 import { OnboardingPage } from './pages/OnboardingPage'
+import { JoinPage } from './pages/JoinPage'
 import { GroceryListPage } from './pages/GroceryListPage'
 import { CurrentListPage } from './pages/CurrentListPage'
 import { RecipesPage } from './pages/RecipesPage'
 import { RecipeDetailPage } from './pages/RecipeDetailPage'
 import { RecipeFormPage } from './pages/RecipeFormPage'
+import { InstanceSettingsPage } from './pages/InstanceSettingsPage'
 
 function App() {
   if (isMissingEnv) {
@@ -42,8 +44,23 @@ function App() {
     )
   }
 
-  if (!user) return <LoginPage />
-  if (!isMember) return <OnboardingPage />
+  if (!user) {
+    return (
+      <Routes>
+        <Route path="/join/:code" element={<JoinPage />} />
+        <Route path="*" element={<LoginPage />} />
+      </Routes>
+    )
+  }
+
+  if (!isMember) {
+    return (
+      <Routes>
+        <Route path="/join/:code" element={<JoinPage />} />
+        <Route path="*" element={<OnboardingPage />} />
+      </Routes>
+    )
+  }
 
   return (
     <Layout>
@@ -54,6 +71,8 @@ function App() {
         <Route path="/recipes/new" element={<RecipeFormPage />} />
         <Route path="/recipes/:id" element={<RecipeDetailPage />} />
         <Route path="/recipes/:id/edit" element={<RecipeFormPage />} />
+        <Route path="/settings" element={<InstanceSettingsPage />} />
+        <Route path="/join/:code" element={<JoinPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

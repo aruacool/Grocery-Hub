@@ -1,5 +1,5 @@
-import { NavLink } from 'react-router-dom'
-import { ShoppingCart, ListChecks, ChefHat, LogOut, Download } from 'lucide-react'
+import { NavLink, Link } from 'react-router-dom'
+import { ShoppingCart, ListChecks, ChefHat, LogOut, Download, Settings } from 'lucide-react'
 import { useAuth, getDiscordUsername, getDiscordAvatar } from '../lib/auth'
 import { installPWA } from '../main'
 import { useState, type ReactNode } from 'react'
@@ -41,6 +41,13 @@ export function Layout({ children }: { children: ReactNode }) {
               )}
             </>
           )}
+          <Link
+            to="/settings"
+            className="p-2 text-surface-400 hover:text-surface-100 transition-colors"
+            title="הגדרות"
+          >
+            <Settings size={18} />
+          </Link>
           <button
             onClick={signOut}
             className="p-2 text-surface-400 hover:text-surface-100 transition-colors"
