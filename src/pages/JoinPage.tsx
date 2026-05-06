@@ -41,9 +41,9 @@ export function JoinPage() {
     })
   }, [user, isMember, code, info, refreshMembership, navigate])
 
-  const handleLogin = async () => {
+  const handleLogin = async (provider: 'discord' | 'google') => {
     await supabase.auth.signInWithOAuth({
-      provider: 'discord',
+      provider,
       options: { redirectTo: window.location.href },
     })
   }
@@ -89,12 +89,20 @@ export function JoinPage() {
             <p className="text-primary text-lg mb-6">{inviteName}</p>
 
             {!user && (
-              <button
-                onClick={handleLogin}
-                className="w-full flex items-center justify-center gap-3 bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium py-3 px-6 rounded-xl transition-all"
-              >
-                התחבר עם Discord להצטרפות
-              </button>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleLogin('discord')}
+                  className="w-full flex items-center justify-center gap-3 bg-[#5865F2] hover:bg-[#4752C4] text-white font-medium py-3 px-6 rounded-xl transition-all"
+                >
+                  התחבר עם Discord להצטרפות
+                </button>
+                <button
+                  onClick={() => handleLogin('google')}
+                  className="w-full flex items-center justify-center gap-3 bg-white hover:bg-surface-100 text-surface-900 font-medium py-3 px-6 rounded-xl transition-all"
+                >
+                  התחבר עם Google להצטרפות
+                </button>
+              </div>
             )}
 
             {user && isMember && status === 'idle' && (

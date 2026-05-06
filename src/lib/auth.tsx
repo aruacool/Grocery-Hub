@@ -9,6 +9,8 @@ interface Membership {
   role: InstanceRole
 }
 
+export type OAuthProvider = 'discord' | 'google'
+
 interface AuthContextType {
   user: User | null
   session: Session | null
@@ -18,6 +20,8 @@ interface AuthContextType {
   isSuperAdmin: boolean
   isViewer: boolean
   signInWithDiscord: () => Promise<void>
+  signInWithGoogle: () => Promise<void>
+  signInWith: (provider: OAuthProvider, redirectTo?: string) => Promise<void>
   signOut: () => Promise<void>
   refreshMembership: () => Promise<void>
 }
@@ -89,15 +93,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signInWithDiscord = async () => {
+  const signInWith = async (provider: OAuthProvider, redirectTo?: string) => {
     await supabase.auth.signInWithOAuth({
-      provider: 'discord',
+      provider,
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: redirectTo ?? window.location.origin,
         skipBrowserRedirect: false,
       },
     })
   }
+
+  const signInWithDiscord = () => signInWith('discord')
+  const signInWithGoogle = () => signInWith('google')
 
   const signOut = async () => {
     await supabase.auth.signOut()
@@ -120,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         isSuperAdmin,
         isViewer: membership?.role === 'viewer',
         signInWithDiscord,
+        signInWithGoogle,
+        signInWith,
         signOut,
         refreshMembership,
       }}
@@ -135,10 +144,18 @@ export function useAuth() {
   return context
 }
 
-export function getDiscordUsername(user: User): string {
-  return user.user_metadata?.full_name || user.user_metadata?.name || 'User'
+export function getDisplayName(user: User): string {
+  return user.user_metadata?.full_name || user.user_metadata?.name || user.email || 'User'
 }
 
-export function getDiscordAvatar(user: User): string | null {
-  return user.user_metadata?.avatar_url || null
+export function getAvatarUrl(user: User): string | null {
+  return user.user_metadata?.avatar_url || user.user_metadata?.picture || null
 }
+
+export function getLinkedProviders(user: User): string[] {
+  return (user.identities || []).map(i => i.provider)
+}
+
+// Backwards-compat re-exports for existing call sites.
+export const getDiscordUsername = getDisplayName
+export const getDiscordAvatar = getAvatarUrl

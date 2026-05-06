@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Copy, Trash2, Plus, Users, Pencil, Check, X } from 'lucide-react'
-import { useAuth } from '../lib/auth'
+import { Copy, Trash2, Plus, Users, Pencil, Check, X, Link2, Link2Off } from 'lucide-react'
+import { useAuth, getLinkedProviders } from '../lib/auth'
 import { supabase } from '../lib/supabase'
 
 interface Member {
@@ -40,6 +40,31 @@ export function InstanceSettingsPage() {
   const [editingName, setEditingName] = useState(false)
   const [nameDraft, setNameDraft] = useState('')
   const [copied, setCopied] = useState<string | null>(null)
+  const [linkError, setLinkError] = useState('')
+  const linkedProviders = user ? getLinkedProviders(user) : []
+  const hasDiscord = linkedProviders.includes('discord')
+  const hasGoogle = linkedProviders.includes('google')
+
+  const linkProvider = async (provider: 'discord' | 'google') => {
+    setLinkError('')
+    const { error } = await supabase.auth.linkIdentity({
+      provider,
+      options: { redirectTo: window.location.href },
+    })
+    if (error) setLinkError(error.message)
+  }
+
+  const unlinkProvider = async (provider: 'discord' | 'google') => {
+    if (!user) return
+    if (linkedProviders.length <= 1) {
+      setLinkError('לא ניתן להסיר את החשבון היחיד')
+      return
+    }
+    const identity = user.identities?.find(i => i.provider === provider)
+    if (!identity) return
+    const { error } = await supabase.auth.unlinkIdentity(identity)
+    if (error) setLinkError(error.message)
+  }
 
   const instanceId = membership?.instanceId
   const isOwner = !!instance && !!user && instance.owner_id === user.id
@@ -152,6 +177,62 @@ export function InstanceSettingsPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Linked accounts */}
+      <section className="bg-surface-800 rounded-xl border border-surface-700 p-4">
+        <div className="text-xs text-surface-400 mb-3">חשבונות מקושרים</div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-sm flex items-center gap-2">
+              <span className="text-[#5865F2]">●</span> Discord
+            </span>
+            {hasDiscord ? (
+              <button
+                onClick={() => unlinkProvider('discord')}
+                disabled={linkedProviders.length <= 1}
+                className="flex items-center gap-1.5 text-xs text-surface-400 hover:text-error disabled:opacity-40 disabled:hover:text-surface-400 px-2 py-1"
+                title={linkedProviders.length <= 1 ? 'לא ניתן להסיר' : 'הסר קישור'}
+              >
+                <Link2Off size={14} /> מקושר
+              </button>
+            ) : (
+              <button
+                onClick={() => linkProvider('discord')}
+                className="flex items-center gap-1.5 text-xs text-primary hover:bg-primary/10 px-3 py-1 rounded-lg"
+              >
+                <Link2 size={14} /> קשר
+              </button>
+            )}
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-sm flex items-center gap-2">
+              <span className="text-[#EA4335]">●</span> Google
+            </span>
+            {hasGoogle ? (
+              <button
+                onClick={() => unlinkProvider('google')}
+                disabled={linkedProviders.length <= 1}
+                className="flex items-center gap-1.5 text-xs text-surface-400 hover:text-error disabled:opacity-40 disabled:hover:text-surface-400 px-2 py-1"
+                title={linkedProviders.length <= 1 ? 'לא ניתן להסיר' : 'הסר קישור'}
+              >
+                <Link2Off size={14} /> מקושר
+              </button>
+            ) : (
+              <button
+                onClick={() => linkProvider('google')}
+                className="flex items-center gap-1.5 text-xs text-primary hover:bg-primary/10 px-3 py-1 rounded-lg"
+              >
+                <Link2 size={14} /> קשר
+              </button>
+            )}
+          </div>
+        </div>
+        {linkError && (
+          <div className="mt-3 bg-error/10 border border-error/30 text-error text-sm rounded-lg px-3 py-2">
+            {linkError}
+          </div>
+        )}
       </section>
 
       {/* Invites — owner only */}
