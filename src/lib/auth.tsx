@@ -93,15 +93,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session)
-    })
+    let cancelled = false
+
+    const init = async () => {
+      // PKCE flow lands here with ?code=... in the URL after OAuth.
+      // Exchange it explicitly — detectSessionInUrl alone isn't reliable
+      // for the PKCE code parameter in client-only SPAs.
+      const url = new URL(window.location.href)
+      const code = url.searchParams.get('code')
+      if (code) {
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code)
+        // Strip the OAuth params either way so a stale code can't be retried.
+        url.searchParams.delete('code')
+        url.searchParams.delete('error')
+        url.searchParams.delete('error_code')
+        url.searchParams.delete('error_description')
+        url.searchParams.delete('state')
+        window.history.replaceState({}, '', url.pathname + url.search + url.hash)
+        if (!cancelled) {
+          await handleSession(error ? null : data.session)
+        }
+        return
+      }
+
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!cancelled) await handleSession(session)
+    }
+
+    init()
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleSession(session)
+      if (!cancelled) handleSession(session)
     })
 
-    return () => subscription.unsubscribe()
+    return () => {
+      cancelled = true
+      subscription.unsubscribe()
+    }
   }, [])
 
   const signInWith = async (provider: OAuthProvider, redirectTo?: string) => {
