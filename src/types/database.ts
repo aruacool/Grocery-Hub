@@ -18,6 +18,11 @@ export interface GroceryItem {
   notes: string | null
   created_at: string
   track_depletion?: boolean
+  quantity: number
+  claimed_by: string | null
+  claimed_at: string | null
+  claimed_by_name: string | null
+  claimed_by_avatar: string | null
   category?: Category
 }
 

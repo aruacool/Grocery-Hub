@@ -7,6 +7,7 @@ export function CurrentListPage() {
   const {
     items, categories, loading,
     toggleNeeded, toggleFavorite, updateItem, deleteItem, uploadImage,
+    updateQuantity, claimItem, unclaimItem,
   } = useGroceryItems()
 
   const neededItems = useMemo(
@@ -28,7 +29,7 @@ export function CurrentListPage() {
       .filter(cat => groupedByCategory.has(cat.id))
       .map(cat => {
         const items = groupedByCategory.get(cat.id)!
-        return `${cat.icon} ${cat.name_he}\n${items.map(i => `  ☐ ${i.name_he}`).join('\n')}`
+        return `${cat.icon} ${cat.name_he}\n${items.map(i => `  ☐ ${i.name_he}${i.quantity > 1 ? ` ×${i.quantity}` : ''}`).join('\n')}`
       })
       .join('\n\n')
 
@@ -97,6 +98,9 @@ export function CurrentListPage() {
                     onUpdate={updateItem}
                     onUploadImage={uploadImage}
                     onDelete={deleteItem}
+                    onUpdateQuantity={updateQuantity}
+                    onClaim={claimItem}
+                    onUnclaim={unclaimItem}
                     categories={categories}
                     showGotIt
                   />

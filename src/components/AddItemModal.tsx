@@ -5,7 +5,19 @@ import type { GroceryItem } from '../types/database'
 interface AddItemModalProps {
   categories: { id: string; name_he: string }[]
   onClose: () => void
-  onAdd: (item: Omit<GroceryItem, 'id' | 'created_at' | 'use_count'>) => Promise<void>
+  onAdd: (
+    item: Omit<
+      GroceryItem,
+      | 'id'
+      | 'created_at'
+      | 'use_count'
+      | 'quantity'
+      | 'claimed_by'
+      | 'claimed_at'
+      | 'claimed_by_name'
+      | 'claimed_by_avatar'
+    >
+  ) => Promise<void>
 }
 
 export function AddItemModal({ categories, onClose, onAdd }: AddItemModalProps) {

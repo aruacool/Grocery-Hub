@@ -66,7 +66,22 @@ export function useGroceryItems() {
 
     setItems(prev =>
       prev.map(i =>
-        i.id === item.id ? { ...i, is_needed: newNeeded, use_count: newUseCount } : i
+        i.id === item.id
+          ? {
+              ...i,
+              is_needed: newNeeded,
+              use_count: newUseCount,
+              ...(newNeeded
+                ? {}
+                : {
+                    quantity: 1,
+                    claimed_by: null,
+                    claimed_at: null,
+                    claimed_by_name: null,
+                    claimed_by_avatar: null,
+                  }),
+            }
+          : i
       )
     )
 
@@ -74,6 +89,11 @@ export function useGroceryItems() {
 
     if (!newNeeded) {
       updates.use_count = newUseCount
+      updates.quantity = 1
+      updates.claimed_by = null
+      updates.claimed_at = null
+      updates.claimed_by_name = null
+      updates.claimed_by_avatar = null
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await supabase.from('purchase_log').insert({
@@ -84,6 +104,75 @@ export function useGroceryItems() {
     }
 
     await supabase.from('grocery_items').update(updates).eq('id', item.id)
+  }
+
+  const updateQuantity = async (id: string, quantity: number) => {
+    if (quantity < 1) return
+    setItems(prev => prev.map(i => (i.id === id ? { ...i, quantity } : i)))
+    await supabase.from('grocery_items').update({ quantity }).eq('id', id)
+  }
+
+  const claimItem = async (item: GroceryItem) => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    const name =
+      user.user_metadata?.full_name ||
+      user.user_metadata?.name ||
+      user.email ||
+      'User'
+    const avatar =
+      user.user_metadata?.avatar_url || user.user_metadata?.picture || null
+    const claimedAt = new Date().toISOString()
+
+    setItems(prev =>
+      prev.map(i =>
+        i.id === item.id
+          ? {
+              ...i,
+              claimed_by: user.id,
+              claimed_at: claimedAt,
+              claimed_by_name: name,
+              claimed_by_avatar: avatar,
+            }
+          : i
+      )
+    )
+
+    await supabase
+      .from('grocery_items')
+      .update({
+        claimed_by: user.id,
+        claimed_at: claimedAt,
+        claimed_by_name: name,
+        claimed_by_avatar: avatar,
+      })
+      .eq('id', item.id)
+  }
+
+  const unclaimItem = async (item: GroceryItem) => {
+    setItems(prev =>
+      prev.map(i =>
+        i.id === item.id
+          ? {
+              ...i,
+              claimed_by: null,
+              claimed_at: null,
+              claimed_by_name: null,
+              claimed_by_avatar: null,
+            }
+          : i
+      )
+    )
+
+    await supabase
+      .from('grocery_items')
+      .update({
+        claimed_by: null,
+        claimed_at: null,
+        claimed_by_name: null,
+        claimed_by_avatar: null,
+      })
+      .eq('id', item.id)
   }
 
   const toggleFavorite = async (item: GroceryItem) => {
@@ -104,7 +193,19 @@ export function useGroceryItems() {
     await fetchItems()
   }
 
-  const addItem = async (item: Omit<GroceryItem, 'id' | 'created_at' | 'use_count'>) => {
+  const addItem = async (
+    item: Omit<
+      GroceryItem,
+      | 'id'
+      | 'created_at'
+      | 'use_count'
+      | 'quantity'
+      | 'claimed_by'
+      | 'claimed_at'
+      | 'claimed_by_name'
+      | 'claimed_by_avatar'
+    >
+  ) => {
     await supabase.from('grocery_items').insert({ ...item, use_count: 0 })
     await fetchItems()
   }
@@ -138,6 +239,9 @@ export function useGroceryItems() {
     addItem,
     deleteItem,
     uploadImage,
+    updateQuantity,
+    claimItem,
+    unclaimItem,
     refetch: fetchItems,
   }
 }
