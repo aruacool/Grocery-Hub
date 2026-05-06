@@ -62,11 +62,18 @@ export function useGroceryItems() {
 
   const toggleNeeded = async (item: GroceryItem) => {
     const newNeeded = !item.is_needed
+    const newUseCount = newNeeded ? item.use_count : item.use_count + 1
+
+    setItems(prev =>
+      prev.map(i =>
+        i.id === item.id ? { ...i, is_needed: newNeeded, use_count: newUseCount } : i
+      )
+    )
+
     const updates: Record<string, unknown> = { is_needed: newNeeded }
 
     if (!newNeeded) {
-      // "Got it" — increment use_count and log purchase
-      updates.use_count = item.use_count + 1
+      updates.use_count = newUseCount
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await supabase.from('purchase_log').insert({
@@ -80,9 +87,15 @@ export function useGroceryItems() {
   }
 
   const toggleFavorite = async (item: GroceryItem) => {
+    const newFavorite = !item.is_favorite
+
+    setItems(prev =>
+      prev.map(i => (i.id === item.id ? { ...i, is_favorite: newFavorite } : i))
+    )
+
     await supabase
       .from('grocery_items')
-      .update({ is_favorite: !item.is_favorite })
+      .update({ is_favorite: newFavorite })
       .eq('id', item.id)
   }
 

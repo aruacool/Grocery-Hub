@@ -29,22 +29,15 @@ export function ItemCard({
 }: ItemCardProps) {
   const { isViewer } = useAuth()
   const [editing, setEditing] = useState(false)
-  const [animating, setAnimating] = useState(false)
 
   const handleToggle = () => {
-    setAnimating(true)
-    setTimeout(() => {
-      onToggleNeeded(item)
-      setAnimating(false)
-    }, 250)
+    onToggleNeeded(item)
   }
 
   return (
     <>
       <div
-        className={`bg-surface-800 rounded-xl border border-surface-700 p-3 flex items-center gap-3 transition-all hover:border-surface-600 ${
-          animating ? (item.is_needed ? 'item-exit' : 'item-enter') : ''
-        }`}
+        className="bg-surface-800 rounded-xl border border-surface-700 p-3 flex items-center gap-3 transition-all hover:border-surface-600"
       >
         {/* Image */}
         <div className="w-12 h-12 rounded-lg bg-surface-700 flex items-center justify-center overflow-hidden flex-shrink-0">
