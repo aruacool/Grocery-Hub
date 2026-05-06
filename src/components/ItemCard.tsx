@@ -29,9 +29,11 @@ export function ItemCard({
 }: ItemCardProps) {
   const { isViewer } = useAuth()
   const [editing, setEditing] = useState(false)
+  const [bump, setBump] = useState(0)
 
   const handleToggle = () => {
     onToggleNeeded(item)
+    setBump(b => b + 1)
   }
 
   return (
@@ -88,7 +90,7 @@ export function ItemCard({
               }`}
               title={showGotIt ? 'קניתי!' : item.is_needed ? 'ברשימה' : 'הוסף לרשימה'}
             >
-              <Check size={16} />
+              <Check key={bump} size={16} className={bump > 0 ? 'check-bump' : ''} />
             </button>
 
             <button

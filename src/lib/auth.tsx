@@ -2,63 +2,73 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import type { User, Session } from '@supabase/supabase-js'
 import { supabase, isMissingEnv } from './supabase'
 
-export type UserRole = 'admin' | 'viewer'
+export type InstanceRole = 'owner' | 'editor' | 'viewer'
+
+interface Membership {
+  instanceId: string
+  role: InstanceRole
+}
 
 interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  role: UserRole | null
+  membership: Membership | null
+  isMember: boolean
+  isSuperAdmin: boolean
   isViewer: boolean
   signInWithDiscord: () => Promise<void>
   signOut: () => Promise<void>
+  refreshMembership: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-async function checkUserRole(user: User): Promise<UserRole | null> {
-  const discordId = user.user_metadata?.provider_id || user.user_metadata?.sub
-  if (!discordId) return null
-
+async function loadMembership(userId: string): Promise<Membership | null> {
   const { data } = await supabase
-    .from('allowed_users')
-    .select('role')
-    .eq('discord_id', discordId)
-    .single()
+    .from('instance_members')
+    .select('instance_id, role')
+    .eq('user_id', userId)
+    .maybeSingle()
+  if (!data) return null
+  return { instanceId: data.instance_id, role: data.role as InstanceRole }
+}
 
-  return data?.role || null
+async function loadIsSuperAdmin(userId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('super_admins')
+    .select('user_id')
+    .eq('user_id', userId)
+    .maybeSingle()
+  return !!data
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [role, setRole] = useState<UserRole | null>(null)
+  const [membership, setMembership] = useState<Membership | null>(null)
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false)
   const [loading, setLoading] = useState(true)
 
-  const handleSession = async (session: Session | null) => {
-    if (!session?.user) {
+  const handleSession = async (newSession: Session | null) => {
+    if (!newSession?.user) {
       setSession(null)
       setUser(null)
-      setRole(null)
+      setMembership(null)
+      setIsSuperAdmin(false)
       setLoading(false)
       return
     }
 
-    const userRole = await checkUserRole(session.user)
+    setSession(newSession)
+    setUser(newSession.user)
 
-    if (!userRole) {
-      // Not in allowed_users table — kick them out
-      await supabase.auth.signOut()
-      setSession(null)
-      setUser(null)
-      setRole(null)
-      setLoading(false)
-      return
-    }
-
-    setSession(session)
-    setUser(session.user)
-    setRole(userRole)
+    const [m, s] = await Promise.all([
+      loadMembership(newSession.user.id),
+      loadIsSuperAdmin(newSession.user.id),
+    ])
+    setMembership(m)
+    setIsSuperAdmin(s)
     setLoading(false)
   }
 
@@ -93,8 +103,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut()
   }
 
+  const refreshMembership = async () => {
+    if (!user) return
+    const m = await loadMembership(user.id)
+    setMembership(m)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, role, isViewer: role === 'viewer', signInWithDiscord, signOut }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        loading,
+        membership,
+        isMember: !!membership,
+        isSuperAdmin,
+        isViewer: membership?.role === 'viewer',
+        signInWithDiscord,
+        signOut,
+        refreshMembership,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )

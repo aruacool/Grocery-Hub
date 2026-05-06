@@ -3,6 +3,7 @@ import { useAuth } from './lib/auth'
 import { isMissingEnv } from './lib/supabase'
 import { Layout } from './components/Layout'
 import { LoginPage } from './pages/LoginPage'
+import { OnboardingPage } from './pages/OnboardingPage'
 import { GroceryListPage } from './pages/GroceryListPage'
 import { CurrentListPage } from './pages/CurrentListPage'
 import { RecipesPage } from './pages/RecipesPage'
@@ -31,7 +32,7 @@ function App() {
     )
   }
 
-  const { user, loading } = useAuth()
+  const { user, loading, isMember } = useAuth()
 
   if (loading) {
     return (
@@ -42,6 +43,7 @@ function App() {
   }
 
   if (!user) return <LoginPage />
+  if (!isMember) return <OnboardingPage />
 
   return (
     <Layout>
