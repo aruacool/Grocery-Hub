@@ -9,7 +9,7 @@ export const supabase = isMissingEnv
   ? (null as unknown as ReturnType<typeof createClient>)
   : createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
-        flowType: 'implicit',
+        flowType: 'pkce',
         detectSessionInUrl: true,
         autoRefreshToken: true,
         persistSession: true,
