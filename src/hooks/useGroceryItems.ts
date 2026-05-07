@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/auth'
 import type { GroceryItem, Category } from '../types/database'
 
 export function useGroceryItems() {
+  const { membership } = useAuth()
   const [items, setItems] = useState<GroceryItem[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
@@ -99,6 +101,7 @@ export function useGroceryItems() {
         await supabase.from('purchase_log').insert({
           item_id: item.id,
           purchased_by: user.id,
+          instance_id: membership?.instanceId,
         })
       }
     }
@@ -206,7 +209,7 @@ export function useGroceryItems() {
       | 'claimed_by_avatar'
     >
   ) => {
-    await supabase.from('grocery_items').insert({ ...item, use_count: 0 })
+    await supabase.from('grocery_items').insert({ ...item, use_count: 0, instance_id: membership?.instanceId })
     await fetchItems()
   }
 
